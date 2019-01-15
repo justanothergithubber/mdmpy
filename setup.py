@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mdmpy",
-    version="0.0.2",
+    version="0.0.3",
     author="MDM Py Authors",
     author_email="3600019+justanothergithubber@users.noreply.github.com",
     description="A small example package",
