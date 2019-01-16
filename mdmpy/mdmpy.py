@@ -1,4 +1,4 @@
-import util
+from . import util
 
 class mdm:
     def __init__(self):
