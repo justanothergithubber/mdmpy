@@ -8,4 +8,4 @@ class mdm:
         print("This function is for testing")
 
     def second_test():
-        return useful_func()
+        return util.useful_func()
