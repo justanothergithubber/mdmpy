@@ -49,11 +49,12 @@ With this package, we will assume that `df` is the dataframe which is simply giv
 import mdmpy
 
 # In a typical case one would load df here
-mdm = mdmpy.MDM(df,4,3,[0,1,2])
-init_beta = np.random.random(3)
+mdm = mdmpy.MDM(df,4,3,[0,1,2,3])
+np.random.seed(4)
+init_beta = np.random.random(4)
 grad_beta = mdm.grad_desc(init_beta)
 print(grad_beta)
-# expected output [0.30031206 0.01145427 0.93931724]
+# expected output [0.30238122 0.07955214 0.86779824 0.50951981]
 ```
 
 ### Solver
@@ -63,11 +64,11 @@ The `MDM` class acts as a wrapper and adds the necessary `pyomo` variables and s
 import mdmpy
 
 ipopt_exec_path = /path/to/ipopt
-mdm = mdmpy.MDM(df,4,3,[0,1,2])
+mdm = mdmpy.MDM(df,4,3,[0,1,2,3])
 mdm.model_init()
 mdm.model_solve("ipopt",ipopt_exec_path)
 print([mdm.m.beta[idx].value for idx in mdm.m.beta])
-# expected output [0.30031260573741614, 0.011454067389814948, 0.9393163389096663]
+# expected output [0.30238834989235025, 0.07953888508425154, 0.8678050334295714, 0.5095096796373667]
 ```
 
 # Todo
