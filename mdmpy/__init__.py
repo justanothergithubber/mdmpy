@@ -1,3 +1,3 @@
-from .mdmpy import mdm
+from .mdmpy import MDM
 
 name = "mdmpy"

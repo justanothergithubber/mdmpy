@@ -24,11 +24,14 @@ class MDM:
         self._pdf   = input_pdf   # sets corresponding pdf (has to be inputted, not automatic)
 
     # gets loglikelihood
-    def ll(self, input_beta):
+    def ll(self, input_beta, corr_lambs = None):
         loglik = 0
         for i in range(self._num_indiv):
             x_i = self._X[i]
-            cor_lamb = util.find_corresponding_lambda(self._cdf, x_i, input_beta)
+            if corr_lambs is None:
+                cor_lamb = util.find_corresponding_lambda(self._cdf, x_i, input_beta)
+            else:
+                cor_lamb = corr_lambs[i]
             for k, choice in enumerate(self._Z[i]):
                 if choice:
                     x_ik = x_i[k]
@@ -141,9 +144,11 @@ class MDM:
         beta_iterate = initial_beta #initialize
         for num_step in range(max_steps):
             grad = np.zeros(self._num_attr)
+            corr_lambs = {}
             for i in range(self._num_indiv):
                 x_i = self._X[i]
-                cor_lamb = util.find_corresponding_lambda(self._cdf, x_i, beta_iterate)
+                corr_lambs[i] = util.find_corresponding_lambda(self._cdf, x_i, beta_iterate)
+                cor_lamb = corr_lambs[i]
                 for k, choice in enumerate(self._Z[i]):
                     if choice:
                         vector_collector = np.zeros(self._num_attr)
@@ -161,7 +166,8 @@ class MDM:
                         pass
             beta_iterate = beta_iterate + grad/(num_step+1)
             # once no more big gains are made, stop
-            if abs(last_log_lik-self.ll(beta_iterate))<eps:
+            cur_ll = self.ll(beta_iterate, corr_lambs = corr_lambs)
+            if abs(last_log_lik-cur_ll)<eps:
                 break
-            last_log_lik = self.ll(beta_iterate)
+            last_log_lik = cur_ll
         return beta_iterate
