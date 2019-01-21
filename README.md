@@ -1,5 +1,5 @@
 # MDM Py
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/de1ef2b2ed894576aad3c39f0710c002)](https://www.codacy.com/app/justanothergithubber/mdmpy?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=justanothergithubber/mdmpy&amp;utm_campaign=Badge_Grade)
+
 This package is a `Python` implementation of Marginal Distribution Models (MDMs), which can be used in Discrete Choice Modelling.
 
 # Install
