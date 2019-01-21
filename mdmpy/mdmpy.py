@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import pyomo.environ as aml
 from . import util 
 
 class MDM:
@@ -83,14 +84,14 @@ class MDM:
 
         # Objective Function
         if heteroscedastic:
-            if input_cdf == exp_cdf:
+            if self._cdf == exp_cdf:
                 O_expr = sum(sum(
-                    Z[i][k]*self.m.alpha[k]*(sum(
+                    self._Z[i][k]*self.m.alpha[k]*(sum(
                         self.m.beta[l]*X[i][k][l] for l in self.m.L)
                              -self.m.lambda_[i]) for k in self.m.K) for i in self.m.I)
             else:
                 O_expr = sum(sum(
-                    Z[i][k]*self.m.alpha[k]*aml.log(1-input_cdf(
+                    self._Z[i][k]*self.m.alpha[k]*aml.log(1-self._cdf(
                         self.m.lambda_[i]-sum(
                             self.m.beta[l]*X[i][k][l] for l in self.m.L))) for k in self.m.K) for i in self.m.I)
         else:
@@ -103,7 +104,7 @@ class MDM:
 
             else:
                 O_expr = sum(sum(
-                    Z[i][k]*aml.log(1-input_cdf(
+                    self._Z[i][k]*aml.log(1-self._cdf(
                         self.m.lambda_[i]-sum(
                             self.m.beta[l]*X[i][k][l] for l in self.m.L))) for k in self.m.K) for i in self.m.I)
 
@@ -112,7 +113,7 @@ class MDM:
 
         # Lagrangian Constraints (for each individual)
         # MEM
-        if heteroscedastic and input_cdf == exp_cdf:
+        if heteroscedastic and self._cdf == exp_cdf:
             def lag_cons(model,i):
                 return sum(aml.exp(model.alpha[k]*(sum(model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i])) for k in model.K)<=1
         else:
@@ -129,6 +130,11 @@ class MDM:
         def lamb_size_cons(model,i):
             return (-100,model.lambda_[i],100)
         self.m.LambSizeCon = aml.Constraint(self.m.I, rule = lamb_size_cons)
+
+        def add_conv(self, conv_min = 0):
+            def con_cons(model, i, k):
+                return self.m.lambda_[i]-sum(self.m.beta[l]*self.X[i][k][l] for l in self.m.L)>=conv_min
+            self.m.convcon = aml.Constraint(self.m.I, self.m.K, rule = con_cons)
 
     def model_solve(self, solver, solver_exec_location, tee = False, **kwargs):
         """Start a solver to solve the model"""
