@@ -87,13 +87,13 @@ class MDM:
             if self._cdf == exp_cdf:
                 O_expr = sum(sum(
                     self._Z[i][k]*self.m.alpha[k]*(sum(
-                        self.m.beta[l]*X[i][k][l] for l in self.m.L)
+                        self.m.beta[l]*self._X[i][k][l] for l in self.m.L)
                              -self.m.lambda_[i]) for k in self.m.K) for i in self.m.I)
             else:
                 O_expr = sum(sum(
                     self._Z[i][k]*self.m.alpha[k]*aml.log(1-self._cdf(
                         self.m.lambda_[i]-sum(
-                            self.m.beta[l]*X[i][k][l] for l in self.m.L))) for k in self.m.K) for i in self.m.I)
+                            self.m.beta[l]*self._X[i][k][l] for l in self.m.L))) for k in self.m.K) for i in self.m.I)
         else:
             # Model CDF simplifications
             if self._cdf == util.exp_cdf:
@@ -106,7 +106,7 @@ class MDM:
                 O_expr = sum(sum(
                     self._Z[i][k]*aml.log(1-self._cdf(
                         self.m.lambda_[i]-sum(
-                            self.m.beta[l]*X[i][k][l] for l in self.m.L))) for k in self.m.K) for i in self.m.I)
+                            self.m.beta[l]*self._X[i][k][l] for l in self.m.L))) for k in self.m.K) for i in self.m.I)
 
         # Model Objective
         self.m.O = aml.Objective(expr=O_expr,sense=aml.maximize)
@@ -131,10 +131,10 @@ class MDM:
             return (-100,model.lambda_[i],100)
         self.m.LambSizeCon = aml.Constraint(self.m.I, rule = lamb_size_cons)
 
-        def add_conv(self, conv_min = 0):
-            def con_cons(model, i, k):
-                return self.m.lambda_[i]-sum(self.m.beta[l]*self.X[i][k][l] for l in self.m.L)>=conv_min
-            self.m.convcon = aml.Constraint(self.m.I, self.m.K, rule = con_cons)
+    def add_conv(self, conv_min = 0):
+        def con_cons(model, i, k):
+            return self.m.lambda_[i]-sum(self.m.beta[l]*self._X[i][k][l] for l in self.m.L)>=conv_min
+        self.m.convcon = aml.Constraint(self.m.I, self.m.K, rule = con_cons)
 
     def model_solve(self, solver, solver_exec_location, tee = False, **kwargs):
         """Start a solver to solve the model"""
@@ -145,7 +145,7 @@ class MDM:
     def grad_desc(self, initial_beta,
                   max_steps = 50, f_arg_min = None,
                   eps = 10**-7):
-        
+
         last_log_lik = self.ll(initial_beta)
         beta_iterate = initial_beta #initialize
         for num_step in range(max_steps):
