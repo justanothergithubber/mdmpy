@@ -2,7 +2,7 @@
 
 This package is a `Python` implementation of Marginal Distribution Models (MDMs), which can be used in Discrete Choice Modelling.
 
-# Install
+## Install
 
 This package should eventually be uploaded onto PyPI when the package is more ready. In that case:
 
@@ -12,9 +12,9 @@ pip install mdmpy
 
 should work.
 
-# How to use
-## Simplest Case
-### Gradient Descent
+## How to use
+### Simplest Case
+#### Gradient Descent
 In the simplest case, we will use the Multinomial Logit (MNL) model, which is used as a default. Assuming `numpy`, `scipy` and `pandas` are installed, we generate choice data assuming a random utility model:
 
 ```python
@@ -57,7 +57,7 @@ print(grad_beta)
 # expected output [0.30238122 0.07955214 0.86779824 0.50951981]
 ```
 
-### Solver
+#### Solver
 The `MDM` class acts as a wrapper and adds the necessary `pyomo` variables and sets to model the problem, but requires a solver. [IPOPT](https://projects.coin-or.org/Ipopt), an interior point solver, is recommended. If you have such a solver, it can be called. Assuming IPOPT is being used:
 
 ```python
@@ -71,7 +71,8 @@ print([mdm.m.beta[idx].value for idx in mdm.m.beta])
 # expected output [0.30238834989235025, 0.07953888508425154, 0.8678050334295714, 0.5095096796373667]
 ```
 
-# Todo
+## Todo
 
-1. Add documentation.
-2. Add tests.
+1.  Add documentation.
+    * Add more type hints, especially those involving Python builtins
+2.  Add tests.
