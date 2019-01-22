@@ -1,8 +1,10 @@
 # MDM Py
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/c13f603535364a7ba5a6a18ea6756a64)](https://app.codacy.com/app/justanothergithubber/mdmpy?utm_source=github.com&utm_medium=referral&utm_content=justanothergithubber/mdmpy&utm_campaign=Badge_Grade_Dashboard)
+
 This package is a `Python` implementation of Marginal Distribution Models (MDMs), which can be used in Discrete Choice Modelling.
 
-# Install
+## Install
 
 This package should eventually be uploaded onto PyPI when the package is more ready. In that case:
 
@@ -12,9 +14,9 @@ pip install mdmpy
 
 should work.
 
-# How to use
-## Simplest Case
-### Gradient Descent
+## How to use
+### Simplest Case
+#### Gradient Descent
 In the simplest case, we will use the Multinomial Logit (MNL) model, which is used as a default. Assuming `numpy`, `scipy` and `pandas` are installed, we generate choice data assuming a random utility model:
 
 ```python
@@ -23,7 +25,7 @@ import pandas as pd
 import scipy.stats as stats
 import numpy as np
 
-NUM_INDIV = 57
+NUM_INDIV   = 57
 NUM_CHOICES = 3
 NUM_ATTR    = 4
 
@@ -48,7 +50,7 @@ With this package, we will assume that `df` is the dataframe which is simply giv
 ```python
 import mdmpy
 
-# In a typical case one would load df here
+# In a typical case one would load df before this line
 mdm = mdmpy.MDM(df,4,3,[0,1,2,3])
 np.random.seed(4)
 init_beta = np.random.random(4)
@@ -57,8 +59,8 @@ print(grad_beta)
 # expected output [0.30238122 0.07955214 0.86779824 0.50951981]
 ```
 
-### Solver
-The `MDM` class acts as a wrapper and adds the necessary `pyomo` variables and sets to model the problem, but requires a solver. [IPOPT](https://projects.coin-or.org/Ipopt), an interior point solver, is recommended. If you have such a solver, we can call it. Assuming we are using IPOPT,
+#### Solver
+The `MDM` class acts as a wrapper and adds the necessary `pyomo` variables and sets to model the problem, but requires a solver. [IPOPT](https://projects.coin-or.org/Ipopt), an interior point solver, is recommended. If you have such a solver, it can be called. Assuming IPOPT is being used:
 
 ```python
 import mdmpy
@@ -71,7 +73,8 @@ print([mdm.m.beta[idx].value for idx in mdm.m.beta])
 # expected output [0.30238834989235025, 0.07953888508425154, 0.8678050334295714, 0.5095096796373667]
 ```
 
-# Todo
+## Todo
 
-1. Add documentation.
-2. Add tests.
+1.  Add documentation.
+    * Add more type hints, especially those involving Python builtins
+2.  Add tests.
