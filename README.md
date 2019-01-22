@@ -23,7 +23,7 @@ import pandas as pd
 import scipy.stats as stats
 import numpy as np
 
-NUM_INDIV = 57
+NUM_INDIV   = 57
 NUM_CHOICES = 3
 NUM_ATTR    = 4
 
@@ -48,7 +48,7 @@ With this package, we will assume that `df` is the dataframe which is simply giv
 ```python
 import mdmpy
 
-# In a typical case one would load df here
+# In a typical case one would load df before this line
 mdm = mdmpy.MDM(df,4,3,[0,1,2,3])
 np.random.seed(4)
 init_beta = np.random.random(4)
@@ -58,7 +58,7 @@ print(grad_beta)
 ```
 
 ### Solver
-The `MDM` class acts as a wrapper and adds the necessary `pyomo` variables and sets to model the problem, but requires a solver. [IPOPT](https://projects.coin-or.org/Ipopt), an interior point solver, is recommended. If you have such a solver, we can call it. Assuming we are using IPOPT,
+The `MDM` class acts as a wrapper and adds the necessary `pyomo` variables and sets to model the problem, but requires a solver. [IPOPT](https://projects.coin-or.org/Ipopt), an interior point solver, is recommended. If you have such a solver, it can be called. Assuming IPOPT is being used:
 
 ```python
 import mdmpy
