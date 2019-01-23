@@ -5,8 +5,11 @@ from scipy.optimize import bisect
 # in general, lambda = 1
 # will be used as default cdf and pdfs
 def exp_cdf(x, lambda_:float = 1):
+    """Exponential Cumulative Distribution Function (CDF), with default parameter 1"""
     return 1-aml.exp(-lambda_*x)
+
 def exp_pdf(x, lambda_:float = 1):
+    """Exponential Probability Density Function (PDF), with default parameter 1"""
     return lambda_*aml.exp(-lambda_*x)
 
 # Default Bisection function

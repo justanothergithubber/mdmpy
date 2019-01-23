@@ -38,8 +38,8 @@ class MDM:
         self._num_indiv   = num_indiv   # number of individuals
         self._num_attr    = num_attr    # number of attributes/coefficients
         self._num_choices = num_choices # number of alternatives/choices
-        self._cdf   = input_cdf   # sets the cdf for the model
-        self._pdf   = input_pdf   # sets corresponding pdf (has to be inputted, not automatic)
+        self._cdf = input_cdf   # sets the cdf for the model
+        self._pdf = input_pdf   # sets corresponding pdf (has to be inputted, not automatic)
 
     def ll(self, input_beta, corr_lambs = None) -> float:
         """This function gets the log-likelihood using the current beta. If
@@ -86,6 +86,7 @@ class MDM:
             self.m.beta    = aml.Var(self.m.L)
             self.m.lambda_ = aml.Var(self.m.I)
         
+        # Handling heteroscedascity
         if heteroscedastic:
             # known heteroscedasticity
             if isinstance(heteroscedastic, list):
@@ -96,10 +97,10 @@ class MDM:
 #                 self.m.AlphaSumCons = aml.Constraint(expr=sum(self.m.alpha[k] for k in self.m.K)==num_choices)
                 self.m.FixOneAlphaC = aml.Constraint(expr=self.m.alpha[0] == 1)
 
-                def tol_cons(model, k, ALPHA_TOL = 0.3):
+                def _tol_cons(model, k, ALPHA_TOL = 0.3):
                     return model.alpha[k] >= ALPHA_TOL
 
-                self.m.AlphaTol = aml.Constraint(self.m.K,rule = tol_cons)
+                self.m.AlphaTol = aml.Constraint(self.m.K,rule = _tol_cons)
 
         # Objective Function
         if heteroscedastic:
@@ -144,18 +145,21 @@ class MDM:
 
         # Scale restriction - not required
         # but might help solver not get lost and diverge
-        def beta_size_cons(model, l):
+        def _beta_size_cons(model, l):
             return (-20, model.beta[l], 20)
-        self.m.BetaSizeCon = aml.Constraint(self.m.L, rule = beta_size_cons)
+        self.m.BetaSizeCon = aml.Constraint(self.m.L, rule = _beta_size_cons)
 
-        def lamb_size_cons(model, i):
+        def _lamb_size_cons(model, i):
             return (-100, model.lambda_[i], 100)
-        self.m.LambSizeCon = aml.Constraint(self.m.I, rule = lamb_size_cons)
+        self.m.LambSizeCon = aml.Constraint(self.m.I, rule = _lamb_size_cons)
 
     def add_conv(self, conv_min: float = 0):
-        def con_cons(model, i, k):
+        """This function restricts the argument of the CDF and PDF such
+        that they are above a set limit, commonly zero. This restricts
+        the domain to a region whereby the 1-CDF is convex."""
+        def _con_cons(model, i, k):
             return model.lambda_[i]-sum(model.beta[l]*self._X[i][k][l] for l in model.L) >= conv_min
-        self.m.convcon = aml.Constraint(self.m.I, self.m.K, rule = con_cons)
+        self.m.convcon = aml.Constraint(self.m.I, self.m.K, rule = _con_cons)
 
     def model_solve(self, solver, solver_exec_location, tee: bool = False, **kwargs):
         """Start a solver to solve the model"""

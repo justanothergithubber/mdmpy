@@ -1,3 +1,7 @@
+"""
+mdmpy is an implementation of Marginal Distribution Models (MDM) which can be
+applied to discrete choice modelling.
+"""
 import setuptools
 
 with open("README.md", "r") as fh:
@@ -5,10 +9,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mdmpy",
-    version="0.0.13",
+    version="0.0.14",
     author="MDM Py Authors",
     author_email="3600019+justanothergithubber@users.noreply.github.com",
-    description="A small example package",
+    description="A package that implements Marginal Distribution Models (MDMs)",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/justanothergithubber/mdmpy",
@@ -19,8 +23,9 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-   'numpy',
-   'scipy',
-   'pyomo'
+    'pandas',
+    'numpy',
+    'scipy',
+    'pyomo'
     ],
 )

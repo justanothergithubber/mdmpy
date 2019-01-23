@@ -6,7 +6,7 @@ This package is a `Python` implementation of Marginal Distribution Models (MDMs)
 
 This package should eventually be uploaded onto PyPI when the package is more ready. In that case:
 
-```
+```bat
 pip install mdmpy
 ```
 
@@ -43,13 +43,13 @@ df['individual'] = [indiv for indiv in range(NUM_INDIV) for _ in range(NUM_CHOIC
 df['altvar'] = [altlvl for _ in range(NUM_INDIV) for altlvl in letters[:NUM_CHOICES]]
 ```
 
-With this package, we will assume that `df` is the dataframe which is simply given to us. Instead of having the code itself find out how many individuals, choices and coefficients or attributes there are, we will simply feed them into the class. To perform a gradient descent with this class, we will use the `grad_desc` method.
+With this package, we will assume that `df` is the dataframe which is simply given to us. Instead of having the code itself find out how many individuals, choices and coefficients or attributes there are, we will simply feed them into the class. To perform a gradient descent with this class, we will use the `grad_desc` method, using the `df` from above as input,
 
 ```python
 import mdmpy
 
 # In a typical case one would load df before this line
-mdm = mdmpy.MDM(df,4,3,[0,1,2,3])
+mdm = mdmpy.MDM(df, 4, 3, [0, 1, 2, 3])
 np.random.seed(4)
 init_beta = np.random.random(4)
 grad_beta = mdm.grad_desc(init_beta)
@@ -63,8 +63,8 @@ The `MDM` class acts as a wrapper and adds the necessary `pyomo` variables and s
 ```python
 import mdmpy
 
-ipopt_exec_path = /path/to/ipopt
-mdm = mdmpy.MDM(df,4,3,[0,1,2,3])
+ipopt_exec_path = /path/to/ipopt # Replace with proper path
+mdm = mdmpy.MDM(df, 4, 3, [0, 1, 2, 3])
 mdm.model_init()
 mdm.model_solve("ipopt",ipopt_exec_path)
 print([mdm.m.beta[idx].value for idx in mdm.m.beta])
@@ -74,5 +74,6 @@ print([mdm.m.beta[idx].value for idx in mdm.m.beta])
 ## Todo
 
 1.  Add documentation.
-    * Add more type hints, especially those involving Python builtins
+    *   Add more type hints, especially those involving Python builtins
+
 2.  Add tests.
