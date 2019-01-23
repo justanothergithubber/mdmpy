@@ -8,7 +8,7 @@ class MDM:
     The main class of the package. This models the Marginal Distribution
     Models (MDM)
     """
-    def __init__(self, input_dataframe, ch_id:int, num_choices:int,
+    def __init__(self, input_dataframe, ch_id: int, num_choices: int,
                  list_of_coefs,
                  input_cdf = util.exp_cdf,
                  input_pdf = util.exp_pdf):
@@ -23,6 +23,7 @@ class MDM:
         This will require some other changes to allow for individual-specific
         coefficients, which will be added at a later date.
         """
+        
         num_indiv = int(input_dataframe.shape[0]/num_choices)
         # check if numerically equivalent
         if not num_indiv == input_dataframe.shape[0]/num_choices:
@@ -134,14 +135,14 @@ class MDM:
         # Lagrangian Constraints (for each individual)
         # MEM
         if heteroscedastic and self._cdf == util.exp_cdf:
-            def lag_cons(model, i):
+            def _lag_cons(model, i):
                 return sum(aml.exp(model.alpha[k]*(sum(
                     model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i])) for k in model.K) <= 1
         else:
-            def lag_cons(model, i):
+            def _lag_cons(model, i):
                 return sum(1-self._cdf(model.lambda_[i]-sum(
                     model.beta[l]*self._X[i][k][l] for l in model.L)) for k in model.K) <= 1
-        self.m.C = aml.Constraint(self.m.I,rule=lag_cons)
+        self.m.C = aml.Constraint(self.m.I, rule=_lag_cons)
 
         # Scale restriction - not required
         # but might help solver not get lost and diverge
@@ -165,7 +166,24 @@ class MDM:
         """Start a solver to solve the model"""
         self.solver = aml.SolverFactory(solver,executable=solver_exec_location)
         self.solver.options.update(kwargs)
-        return self.solver.solve(self.m,tee=tee)
+        return self.solver.solve(self.m, tee=tee)
+
+    def _calc_grad(self, x_i, k, cor_lamb, beta_iterate, f_arg_min):
+        """This function is the part where the gradient is actually calculated."""
+        vector_collector = np.zeros(self._num_attr)
+        denom = 0
+        for x_im in x_i: # m var unused
+            f_arg_im = cor_lamb - sum(x*y for x, y in zip(beta_iterate, x_im))
+            if f_arg_min is not None:
+                if f_arg_min >= f_arg_im: raise AssertionError
+            vector_collector = vector_collector + (self._pdf(f_arg_im) * x_im)
+            denom += self._pdf(f_arg_im)
+        x_ik = x_i[k]
+        f_arg_ik = cor_lamb - sum(x*y for x, y in zip(beta_iterate, x_ik))
+        if f_arg_min is not None:
+            if f_arg_min >= f_arg_ik: raise AssertionError
+        return (((x_ik - (vector_collector / denom)) * self._pdf(f_arg_ik)) /
+                       (1-self._cdf(f_arg_ik)))
 
     def grad_desc(self, initial_beta,
                   max_steps: int = 50, f_arg_min = None,
@@ -183,30 +201,20 @@ class MDM:
             for i in range(self._num_indiv):
                 x_i = self._X[i]
                 corr_lambs[i] = util.find_corresponding_lambda(self._cdf, x_i, beta_iterate)
-                cor_lamb = corr_lambs[i]
                 for k, choice in enumerate(self._Z[i]):
                     if choice:
-                        vector_collector = np.zeros(self._num_attr)
-                        denom = 0
-                        for x_im in x_i: # m var unused
-                            f_arg_im = cor_lamb - sum(x*y for x,y in zip(beta_iterate, x_im))
-                            if f_arg_min is not None:
-                                if f_arg_min >= f_arg_im: raise AssertionError
-                            vector_collector = vector_collector + (self._pdf(f_arg_im) * x_im)
-        #                     print(vector_collector)
-                            denom += self._pdf(f_arg_im)
-                        x_ik = x_i[k]
-                        f_arg_ik = cor_lamb - sum(x*y for x,y in zip(beta_iterate, x_ik))
-                        if f_arg_min is not None:
-                            if f_arg_min >= f_arg_ik: raise AssertionError
-                        grad = grad + (((x_ik - (vector_collector / denom)) * self._pdf(f_arg_ik)) /
-                                       (1-self._cdf(f_arg_ik)))
+                        grad = grad + self._calc_grad(self,
+                                                      x_i,
+                                                      k,
+                                                      corr_lambs[i],
+                                                      beta_iterate,
+                                                      f_arg_min)
                     else:
                         pass
             beta_iterate = beta_iterate + grad/(num_step+1)
             # once no more big gains are made, stop
             cur_ll = self.ll(beta_iterate, corr_lambs = corr_lambs)
-            if abs(last_log_lik-cur_ll)<eps:
+            if abs(last_log_lik-cur_ll) < eps:
                 break
             last_log_lik = cur_ll
         return beta_iterate
