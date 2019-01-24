@@ -1,3 +1,6 @@
+"""
+This module contains utility functions which are called by the main class.
+"""
 from functools import partial
 import pyomo.environ as aml
 from scipy.optimize import bisect
@@ -27,6 +30,12 @@ def find_corresponding_lambda(input_cdf, input_beta, input_x,
                               max_lamb_retries: int = 1000,
                               lamb_coef: float = 1.4 # any number >1 should work
                               ) -> float:
+    """This function is called to find lambda given the model, input beta
+    and input x_i. It does this by first using a large number which may
+    be too big and causes overflows, but then reduces the positive and
+    negative parts separately until the valid gives a valid output.
+    Then, with a positive output and a negative output, a bisection search
+    for the root is performed."""
     part_func  = partial(bisect_func, input_cdf, input_beta, input_x)
     cor_lamb   = None
     lamb_retry = 0

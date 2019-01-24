@@ -1,3 +1,12 @@
+"""
+This module contains the main class, MDM, in this package.
+
+Within the class are methods related to solving for the Maximum
+Likelihood Estimate (MLE) of coefficients. Two methods are used
+to initialise a model using pyomo, which can then be passed onto
+a solver to be solved. Another way to solve for the coefficients
+is to use a gradient ascent.
+"""
 import math
 import numpy as np
 import pyomo.environ as aml
@@ -50,7 +59,7 @@ class MDM:
         for i in range(self._num_indiv):
             x_i = self._X[i]
             if corr_lambs is None:
-                cor_lamb = util.find_corresponding_lambda(self._cdf, x_i, input_beta)
+                cor_lamb = util.find_corresponding_lambda(self._cdf, input_beta, x_i)
             else:
                 cor_lamb = corr_lambs[i]
             for k, choice in enumerate(self._Z[i]):
@@ -65,7 +74,8 @@ class MDM:
 
     def model_init(self, heteroscedastic = False,
                    model_seed = None):
-
+        """"This method initializes the pyomo model as an instance
+        attribute m. Values can later be taken directly from m."""
         self.m = aml.ConcreteModel()
         # Model Sets
         self.m.K = aml.Set(initialize=range(self._num_choices))
@@ -164,26 +174,37 @@ class MDM:
 
     def model_solve(self, solver, solver_exec_location, tee: bool = False, **kwargs):
         """Start a solver to solve the model"""
-        self.solver = aml.SolverFactory(solver,executable=solver_exec_location)
+        self.solver = aml.SolverFactory(solver, executable=solver_exec_location)
         self.solver.options.update(kwargs)
         return self.solver.solve(self.m, tee=tee)
 
-    def _calc_grad(self, x_i, k, cor_lamb, beta_iterate, f_arg_min):
+    def _calc_grad(self, beta_iterate, f_arg_min):
         """This function is the part where the gradient is actually calculated."""
-        vector_collector = np.zeros(self._num_attr)
-        denom = 0
-        for x_im in x_i: # m var unused
-            f_arg_im = cor_lamb - sum(x*y for x, y in zip(beta_iterate, x_im))
-            if f_arg_min is not None:
-                if f_arg_min >= f_arg_im: raise AssertionError
-            vector_collector = vector_collector + (self._pdf(f_arg_im) * x_im)
-            denom += self._pdf(f_arg_im)
-        x_ik = x_i[k]
-        f_arg_ik = cor_lamb - sum(x*y for x, y in zip(beta_iterate, x_ik))
-        if f_arg_min is not None:
-            if f_arg_min >= f_arg_ik: raise AssertionError
-        return (((x_ik - (vector_collector / denom)) * self._pdf(f_arg_ik)) /
-                       (1-self._cdf(f_arg_ik)))
+        grad = np.zeros(self._num_attr)
+        corr_lambs = {}
+        for i in range(self._num_indiv):
+            x_i = self._X[i]
+            corr_lambs[i] = util.find_corresponding_lambda(self._cdf, beta_iterate, x_i)
+            for k, choice in enumerate(self._Z[i]):
+                if choice:
+                    vector_collector = np.zeros(self._num_attr)
+                    denom = 0
+                    for x_im in x_i: # m var unused
+                        f_arg_im = corr_lambs[i] - sum(x*y for x, y in zip(beta_iterate, x_im))
+                        if f_arg_min is not None:
+                            if f_arg_min >= f_arg_im: raise AssertionError
+                        vector_collector = vector_collector + (self._pdf(f_arg_im) * x_im)
+                        denom += self._pdf(f_arg_im)
+                    x_ik = x_i[k]
+                    f_arg_ik = corr_lambs[i] - sum(x*y for x, y in zip(beta_iterate, x_ik))
+                    if f_arg_min is not None:
+                        if f_arg_min >= f_arg_ik: raise AssertionError
+                else:
+                    pass
+
+            grad = grad + (((x_ik - (vector_collector / denom)) * self._pdf(f_arg_ik)) /
+                           (1-self._cdf(f_arg_ik)))
+        return grad, corr_lambs
 
     def grad_desc(self, initial_beta,
                   max_steps: int = 50, f_arg_min = None,
@@ -196,21 +217,7 @@ class MDM:
         last_log_lik = self.ll(initial_beta)
         beta_iterate = initial_beta #initialize
         for num_step in range(max_steps):
-            grad = np.zeros(self._num_attr)
-            corr_lambs = {}
-            for i in range(self._num_indiv):
-                x_i = self._X[i]
-                corr_lambs[i] = util.find_corresponding_lambda(self._cdf, x_i, beta_iterate)
-                for k, choice in enumerate(self._Z[i]):
-                    if choice:
-                        grad = grad + self._calc_grad(self,
-                                                      x_i,
-                                                      k,
-                                                      corr_lambs[i],
-                                                      beta_iterate,
-                                                      f_arg_min)
-                    else:
-                        pass
+            grad, corr_lambs = self._calc_grad(beta_iterate, f_arg_min)
             beta_iterate = beta_iterate + grad/(num_step+1)
             # once no more big gains are made, stop
             cur_ll = self.ll(beta_iterate, corr_lambs = corr_lambs)
