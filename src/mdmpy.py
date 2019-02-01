@@ -17,17 +17,25 @@ class MDM:
     The main class of the package. This models the Marginal Distribution
     Models (MDM)
     """
-    def __init__(self, input_dataframe, ch_id: int, num_choices: int,
+    def __init__(self,
+                 input_dataframe,
+                 ch_id: int,
+                 num_choices: int,
                  list_of_coefs,
-                 input_cdf = util.exp_cdf,
-                 input_pdf = util.exp_pdf):
-        """"The class is initialised with a dataframe, along with the relevant
-        column indices of the dataframe, such as the choice index, the number of
-        and the coefficients that will be taken into account. All of such data
-        are reused in the class methods.
+                 input_cdf=util.exp_cdf,
+                 input_pdf=util.exp_pdf):
+        """"
+        The class is initialised with a 2D NumPy array, which acts as a
+        table in the 'wide' format in Discrete Choice Modelling.
+        One set of inputs are relevant column indices, such as the choice 
+        index, and the coefficients that will be considered in the model.
+        Another input is the number of choices or alternatives each 
+        individual has. The data is then made into other NumPy arrays used 
+        in the class methods.
 
-        Default CDF/PDF of the model is the Multinomial Logit (MNL) model, which
-        is globally convex in its support. But of course this can be changed.
+        Default CDF/PDF of the model is the Multinomial Logit (MNL) model,
+        which is globally convex in its support. Other CDFs and PDFs will
+        be supported
 
         This will require some other changes to allow for individual-specific
         coefficients, which will be added at a later date.
@@ -39,17 +47,16 @@ class MDM:
             raise ValueError("""Unexpectedly, the number of columns does not divide
                                 by the number of choices, as inputed.""")
         num_attr = len(list_of_coefs)
-        Z = list(zip(*[iter(input_dataframe.iloc[:, ch_id])]*num_choices))
+        Z = np.array(input_dataframe.iloc[:, ch_id]).reshape((num_indiv, num_choices))
         X = np.reshape(np.array(input_dataframe.iloc[:, list_of_coefs]),
                        (num_indiv, num_choices, num_attr))
-        self._X = X
-        self._Z = Z
-        self._ch_id       = ch_id       # choice column index
-        self._num_indiv   = num_indiv   # number of individuals
-        self._num_attr    = num_attr    # number of attributes/coefficients
+        self._X = X # is indexed in the order (indiv, choice, attr)
+        self._Z = Z # choice of each individual
+        self._num_indiv = num_indiv  # number of individuals
+        self._num_attr = num_attr # number of attributes/coefficients
         self._num_choices = num_choices # number of alternatives/choices
-        self._cdf = input_cdf   # sets the cdf for the model
-        self._pdf = input_pdf   # sets corresponding pdf (has to be inputted, not automatic)
+        self._cdf = input_cdf # sets the cdf for the model
+        self._pdf = input_pdf # sets corresponding pdf (has to be inputted, not automatic)
 
     def ll(self, input_beta, corr_lambs = None) -> float:
         """This function gets the log-likelihood using the current beta. If
@@ -71,6 +78,20 @@ class MDM:
                     pass
         return loglik
 
+    def __loglikexpr(self, heteroscedastic = False, lag_f=lambda arg:aml.log(1-self._cdf(arg))):
+        ### TODO - refactor the double summation over I and K, which is repeated
+        if heteroscedastic:
+            return sum(sum(
+                        self._Z[i][k]*self.m.alpha[k]*lag_f(
+                            self.m.lambda_[i]-sum(
+                                self.m.beta[l]*self._X[i][k][l] for l in self.m.L)
+                                    ) for k in self.m.K) for i in self.m.I)
+        else:
+            return sum(sum(
+                        self._Z[i][k]*lag_f(
+                            self.m.lambda_[i]-sum(
+                                self.m.beta[l]*self._X[i][k][l] for l in self.m.L)
+                                    ) for k in self.m.K) for i in self.m.I)
 
     def model_init(self, heteroscedastic = False,
                    model_seed = None):
@@ -91,12 +112,13 @@ class MDM:
             numpy_stan_exp = np.random.standard_exponential
             self.m.beta    = aml.Var(self.m.L, initialize = lambda _: numpy_stan_exp())
             self.m.lambda_ = aml.Var(self.m.I, initialize = lambda _: numpy_stan_exp())
+            ### TODO - Delete OR add verbosity flag to determine if these should be printed
             print([self.m.beta[h].value for h in self.m.L])
             print([self.m.lambda_[g].value for g in self.m.I])
         else:
             self.m.beta    = aml.Var(self.m.L)
             self.m.lambda_ = aml.Var(self.m.I)
-        
+
         # Handling heteroscedascity
         if heteroscedastic:
             # known heteroscedasticity
@@ -114,30 +136,28 @@ class MDM:
                 self.m.AlphaTol = aml.Constraint(self.m.K,rule = _tol_cons)
 
         # Objective Function
+        ### TODO Hardcode in the other common distributions, especially
+        ### Those with a region which is simultaneously reliability function
+        ### convex and logconcave, which guarantees concave objective
+        ### This hardcoding should simplify the algebraic expression
+        ### for the solver, and hence allow to see more
+        ###### Dists under consideration:
+        ###### Hyperbolic secant - region: non-negative numbers AKA above median
+        ###### Extreme Value - region: non-negative numbers AKA above median
+        ###### ... distributions with suitable unbounded regions 
+        ###### ... satisfying tail convex+tail logconcave
         if heteroscedastic:
             if self._cdf == util.exp_cdf:
-                O_expr = sum(sum(
-                    self._Z[i][k]*self.m.alpha[k]*(sum(
-                        self.m.beta[l]*self._X[i][k][l] for l in self.m.L)
-                             -self.m.lambda_[i]) for k in self.m.K) for i in self.m.I)
+                O_expr = self.__loglikexpr(self, heteroscedastic = heteroscedastic, lag_f = lambda arg: -arg)
             else:
-                O_expr = sum(sum(
-                    self._Z[i][k]*self.m.alpha[k]*aml.log(1-self._cdf(
-                        self.m.lambda_[i]-sum(
-                            self.m.beta[l]*self._X[i][k][l] for l in self.m.L))) for k in self.m.K) for i in self.m.I)
+                O_expr = self.__loglikexpr(self, heteroscedastic = heteroscedastic)
+
         else:
             # Model CDF simplifications
             if self._cdf == util.exp_cdf:
-                O_expr = sum(sum(
-                    self._Z[i][k]*(sum(
-                        self.m.beta[l]*self._X[i][k][l] for l in self.m.L)
-                             -self.m.lambda_[i]) for k in self.m.K) for i in self.m.I)
-
+                O_expr = self.__loglikexpr(self, lag_f = lambda arg: -arg)
             else:
-                O_expr = sum(sum(
-                    self._Z[i][k]*aml.log(1-self._cdf(
-                        self.m.lambda_[i]-sum(
-                            self.m.beta[l]*self._X[i][k][l] for l in self.m.L))) for k in self.m.K) for i in self.m.I)
+                O_expr = self.__loglikexpr(self)
 
         # Model Objective
         self.m.O = aml.Objective(expr=O_expr, sense=aml.maximize)
@@ -178,36 +198,27 @@ class MDM:
         self.solver.options.update(kwargs)
         return self.solver.solve(self.m, tee=tee)
 
-    def _calc_grad(self, beta_iterate, f_arg_min):
-        """This function is the part where the gradient is actually calculated."""
-        grad = np.zeros(self._num_attr)
-        corr_lambs = {}
-        for i in range(self._num_indiv):
-            x_i = self._X[i]
-            corr_lambs[i] = util.find_corresponding_lambda(self._cdf, beta_iterate, x_i)
-            for k, choice in enumerate(self._Z[i]):
-                if choice:
-                    vector_collector = np.zeros(self._num_attr)
-                    denom = 0
-                    for x_im in x_i: # m var unused
-                        f_arg_im = corr_lambs[i] - sum(x*y for x, y in zip(beta_iterate, x_im))
-                        if f_arg_min is not None:
-                            if f_arg_min >= f_arg_im: raise AssertionError
-                        vector_collector = vector_collector + (self._pdf(f_arg_im) * x_im)
-                        denom += self._pdf(f_arg_im)
-                    x_ik = x_i[k]
-                    f_arg_ik = corr_lambs[i] - sum(x*y for x, y in zip(beta_iterate, x_ik))
-                    if f_arg_min is not None:
-                        if f_arg_min >= f_arg_ik: raise AssertionError
-                else:
-                    pass
+    def _calc_grad_lambda_beta(self, beta_iterate, corr_lambs):
+        f_arg_input = corr_lambs - np.dot(self._X,beta_iterate).T
+        A = self._pdf(f_arg_input)
+        numerator = np.sum((self._X.T*A), 1) # sum 1 means sum over all choices
+        denominator = np.sum(A, 0)
+        return (numerator/denominator).T
 
-            grad = grad + (((x_ik - (vector_collector / denom)) * self._pdf(f_arg_ik)) /
-                           (1-self._cdf(f_arg_ik)))
-        return grad, corr_lambs
+    def _calc_grad_ll_beta(self, beta_iterate, f_arg_min):
+        """This function is the part where the gradient is actually calculated."""
+        corr_lambs = np.empty(self._num_indiv)
+        for i in range(self._num_indiv):
+            corr_lambs[i] = util.find_corresponding_lambda(self._cdf, beta_iterate, self._X[i])
+        grad_mat = ((((self._X - self._calc_grad_lambda_beta(beta_iterate, corr_lambs)[:,np.newaxis,:]) *
+                        ((self._pdf(corr_lambs - np.dot(self._X, beta_iterate).T)).T)[:, :, np.newaxis]) /
+                            (1 - (self._cdf(corr_lambs - np.dot(self._X, beta_iterate).T)).T)[:, :, np.newaxis]) *
+                                self._Z[:, :, np.newaxis])
+        return grad_mat.sum((0, 1)), corr_lambs
 
     def grad_desc(self, initial_beta,
                   max_steps: int = 50, f_arg_min = None,
+                  grad_mult = 1,
                   eps: float = 10**-7):
         """Starts a gradient-descent based method using the CDF and PDF.
         Requires a starting beta iterate. f_arg_min is to ensure that
@@ -217,10 +228,13 @@ class MDM:
         last_log_lik = self.ll(initial_beta)
         beta_iterate = initial_beta #initialize
         for num_step in range(max_steps):
-            grad, corr_lambs = self._calc_grad(beta_iterate, f_arg_min)
-            beta_iterate = beta_iterate + grad/(num_step+1)
+            grad, corr_lambs = self._calc_grad_ll_beta(beta_iterate, f_arg_min)
+            beta_iterate = beta_iterate + grad_mult*(grad/(num_step+1))
             # once no more big gains are made, stop
             cur_ll = self.ll(beta_iterate, corr_lambs = corr_lambs)
+            if math.isnan(cur_ll):
+                print("An Error occurred in calculating Loglikelihood")
+                break # no point continuing when LL has is nan
             if abs(last_log_lik-cur_ll) < eps:
                 break
             last_log_lik = cur_ll

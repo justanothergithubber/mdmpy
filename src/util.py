@@ -21,14 +21,16 @@ def default_bisect_func(input_cdf, input_beta, input_x, lambda_: float) -> float
     """This is the default bisection function. The last input will be varied
     during the bisection search using partial from functools."""
     return (sum(1-input_cdf(lambda_-                            # sum k in K
-            sum(x*y for x,y in zip(input_beta, input_x[k]))     # dot product
-                        ) for k, _ in enumerate(input_x))-1)
+                sum(x*y for x, y in zip(input_beta, input_x[k])))   # dot product
+                    for k, _ in enumerate(input_x))-1)
 
-def find_corresponding_lambda(input_cdf, input_beta, input_x,
-                              bisect_func = default_bisect_func, # can be changed if required
+def find_corresponding_lambda(input_cdf,
+                              input_beta,
+                              input_x,
+                              bisect_func=default_bisect_func, # can be changed if required
                               lamb_const: float = 50000, # starting lambda guess
                               max_lamb_retries: int = 1000,
-                              lamb_coef: float = 1.4 # any number >1 should work
+                              lamb_coef: float = 1.4  # any number >1 should work
                               ) -> float:
     """This function is called to find lambda given the model, input beta
     and input x_i. It does this by first using a large number which may

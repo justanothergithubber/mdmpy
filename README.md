@@ -3,11 +3,11 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/c13f603535364a7ba5a6a18ea6756a64)](https://app.codacy.com/app/justanothergithubber/mdmpy?utm_source=github.com&utm_medium=referral&utm_content=justanothergithubber/mdmpy&utm_campaign=Badge_Grade_Dashboard)
 [![PyPI version](https://badge.fury.io/py/mdmpy.svg)](https://badge.fury.io/py/mdmpy)
 
-This package is a `Python` implementation of Marginal Distribution Models (MDMs), which can be used in Discrete Choice Modelling.
+This package is a `Python` implementation of [Marginal Distribution Models](https://pubsonline.informs.org/doi/10.1287/mnsc.2014.1906) (MDMs), which can be used in Discrete Choice Modelling.
 
 ## Install
 
-This package is uploaded to PyPI. Hence, 
+This package is uploaded to [PyPI](https://pypi.org/ "Python Package Index"). Hence, 
 
 ```bat
 pip install mdmpy
@@ -31,17 +31,17 @@ NUM_CHOICES = 3
 NUM_ATTR    = 4
 
 np.random.seed(2019)
-X = np.random.random((NUM_ATTR,NUM_INDIV*NUM_CHOICES))
+X = np.random.random((NUM_ATTR, NUM_INDIV * NUM_CHOICES))
 true_beta = np.random.random(NUM_ATTR)
-V = np.dot(true_beta.T,X)
-V = np.reshape(V,(NUM_INDIV,NUM_CHOICES))
-eps = stats.gumbel_r.rvs(size=NUM_INDIV*NUM_CHOICES)
-eps = np.reshape(eps,(NUM_INDIV,NUM_CHOICES))
-U = V+eps
-highest_util = np.argmax(U,1)
+V = np.dot(true_beta.T, X)
+V = np.reshape(V, (NUM_INDIV,NUM_CHOICES))
+eps = stats.gumbel_r.rvs(size=NUM_INDIV * NUM_CHOICES)
+eps = np.reshape(eps, (NUM_INDIV, NUM_CHOICES))
+U = V + eps
+highest_util = np.argmax(U, 1)
 
 df = pd.DataFrame(X.T)
-df['choice'] = [1 if idx==x else 0 for idx in highest_util for x in range(NUM_CHOICES)]
+df['choice'] = [1 if idx == x else 0 for idx in highest_util for x in range(NUM_CHOICES)]
 df['individual'] = [indiv for indiv in range(NUM_INDIV) for _ in range(NUM_CHOICES)]
 df['altvar'] = [altlvl for _ in range(NUM_INDIV) for altlvl in letters[:NUM_CHOICES]]
 ```
@@ -61,7 +61,7 @@ print(grad_beta)
 ```
 
 #### Solver
-The `MDM` class acts as a wrapper and adds the necessary `pyomo` variables and sets to model the problem, but requires a solver. [IPOPT](https://projects.coin-or.org/Ipopt), an interior point solver, is recommended. If you have such a solver, it can be called. Assuming IPOPT is being used:
+The `MDM` class acts as a wrapper and adds the necessary `pyomo` variables and sets to model the problem, but requires a solver. [IPOPT](https://projects.coin-or.org/Ipopt "Ipopt home page"), an interior point solver, is recommended. If you have such a solver, it can be called. Assuming IPOPT is being used:
 
 ```python
 import mdmpy
@@ -76,7 +76,7 @@ print([mdm.m.beta[idx].value for idx in mdm.m.beta])
 
 ## Todo
 
-1.  Add documentation.
+1.  Add documentation and more meaningful comments
     *   Add more type hints, especially those involving Python builtins
 
 2.  Add tests.
