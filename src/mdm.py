@@ -132,7 +132,7 @@ class MDM:
                 def _tol_cons(model, k, ALPHA_TOL=0.3):
                     return model.alpha[k] >= ALPHA_TOL
 
-                self.m.AlphaTol = aml.Constraint(self.m.K, rule=_tol_cons)
+                self.m.AlphaTol = aml.Constraint(self.m.K,rule=_tol_cons)
 
         # Objective Function
         ### TODO Hardcode in the other common distributions, especially
@@ -218,7 +218,7 @@ class MDM:
     def grad_desc(self,
                   initial_beta,
                   max_steps: int = 50,
-                  grad_mult: float = 1,
+                  grad_mult=1,
                   eps: float = 10**-7):
         """Starts a gradient-descent based method using the CDF and PDF.
         Requires a starting beta iterate. 

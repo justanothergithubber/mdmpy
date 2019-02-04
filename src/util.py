@@ -38,12 +38,12 @@ def find_corresponding_lambda(input_cdf,
     negative parts separately until the valid gives a valid output.
     Then, with a positive output and a negative output, a bisection search
     for the root is performed."""
-    part_func  = partial(bisect_func, input_cdf, input_beta, input_x)
-    cor_lamb   = None
+    part_func = partial(bisect_func, input_cdf, input_beta, input_x)
+    corr_lamb = None
     lamb_retry = 0
     pos_search_const = lamb_const
     neg_search_const = lamb_const
-    while not cor_lamb and lamb_retry <= max_lamb_retries:
+    while not corr_lamb and lamb_retry <= max_lamb_retries:
         # OverflowError is when the cdf function overflows
         # reduce lambda constant if so
         try:
@@ -59,7 +59,7 @@ def find_corresponding_lambda(input_cdf,
         # positive and negative constants
         # Would likely need to increase lamb_const or decrease lamb_coef
         try:
-            cor_lamb = bisect(part_func,
+            corr_lamb = bisect(part_func,
                               -neg_search_const,
                               pos_search_const)
         except ValueError:
@@ -72,4 +72,4 @@ def find_corresponding_lambda(input_cdf,
             pass
 
         lamb_retry += 1
-    return cor_lamb
+    return corr_lamb
