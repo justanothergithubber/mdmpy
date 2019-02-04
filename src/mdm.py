@@ -78,7 +78,7 @@ class MDM:
                     pass
         return loglik
 
-    def __loglikexpr(self, heteroscedastic, lag_f=lambda arg: aml.log(1-self._cdf(arg))):
+    def __loglikexpr(self, heteroscedastic=False, lag_f=lambda arg: aml.log(1-self._cdf(arg))):
         ### TODO - refactor the double summation over I and K, which is repeated
         if heteroscedastic:
             return sum(sum(
@@ -147,16 +147,16 @@ class MDM:
         ###### ... satisfying tail convex+tail logconcave
         if heteroscedastic:
             if self._cdf == util.exp_cdf:
-                O_expr = self.__loglikexpr(self, heteroscedastic, lag_f=lambda arg: -arg)
+                O_expr = self.__loglikexpr(heteroscedastic=True, lag_f=lambda arg: -arg)
             else:
-                O_expr = self.__loglikexpr(self, heteroscedastic)
+                O_expr = self.__loglikexpr(heteroscedastic=True)
 
         else:
             # Model CDF simplifications
             if self._cdf == util.exp_cdf:
-                O_expr = self.__loglikexpr(self, heteroscedastic, lag_f = lambda arg: -arg)
+                O_expr = self.__loglikexpr(lag_f=lambda arg: -arg)
             else:
-                O_expr = self.__loglikexpr(self, heteroscedastic)
+                O_expr = self.__loglikexpr()
 
         # Model Objective
         self.m.O = aml.Objective(expr=O_expr, sense=aml.maximize)
