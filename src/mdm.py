@@ -78,7 +78,7 @@ class MDM:
                     pass
         return loglik
 
-    def __loglikexpr(self, heteroscedastic=False, lag_f=lambda arg: aml.log(1-self._cdf(arg))):
+    def __loglikexpr(self, heteroscedastic, lag_f=lambda arg: aml.log(1-self._cdf(arg))):
         ### TODO - refactor the double summation over I and K, which is repeated
         if heteroscedastic:
             return sum(sum(
@@ -132,7 +132,7 @@ class MDM:
                 def _tol_cons(model, k, ALPHA_TOL=0.3):
                     return model.alpha[k] >= ALPHA_TOL
 
-                self.m.AlphaTol = aml.Constraint(self.m.K,rule=_tol_cons)
+                self.m.AlphaTol = aml.Constraint(self.m.K, rule=_tol_cons)
 
         # Objective Function
         ### TODO Hardcode in the other common distributions, especially
@@ -147,16 +147,16 @@ class MDM:
         ###### ... satisfying tail convex+tail logconcave
         if heteroscedastic:
             if self._cdf == util.exp_cdf:
-                O_expr = self.__loglikexpr(self, heteroscedastic=True, lag_f=lambda arg: -arg)
+                O_expr = self.__loglikexpr(self, heteroscedastic, lag_f=lambda arg: -arg)
             else:
-                O_expr = self.__loglikexpr(self, heteroscedastic=True)
+                O_expr = self.__loglikexpr(self, heteroscedastic)
 
         else:
             # Model CDF simplifications
             if self._cdf == util.exp_cdf:
-                O_expr = self.__loglikexpr(self, lag_f = lambda arg: -arg)
+                O_expr = self.__loglikexpr(self, heteroscedastic, lag_f = lambda arg: -arg)
             else:
-                O_expr = self.__loglikexpr(self)
+                O_expr = self.__loglikexpr(self, heteroscedastic)
 
         # Model Objective
         self.m.O = aml.Objective(expr=O_expr, sense=aml.maximize)
@@ -221,7 +221,7 @@ class MDM:
                   grad_mult=1,
                   eps: float = 10**-7):
         """Starts a gradient-descent based method using the CDF and PDF.
-        Requires a starting beta iterate. 
+        Requires a starting beta iterate.
 
         TODO : to add f_arg_min which will be pass onto the gradient
         calculators and use grad_lambda_beta to move towards
