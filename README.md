@@ -1,5 +1,6 @@
 # MDM Py
 
+[![Documentation Status](https://readthedocs.org/projects/mdmpy/badge/?version=latest)](https://mdmpy.readthedocs.io/en/latest/?badge=latest)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/c13f603535364a7ba5a6a18ea6756a64)](https://app.codacy.com/app/justanothergithubber/mdmpy?utm_source=github.com&utm_medium=referral&utm_content=justanothergithubber/mdmpy&utm_campaign=Badge_Grade_Dashboard)
 [![PyPI version](https://badge.fury.io/py/mdmpy.svg)](https://badge.fury.io/py/mdmpy)
 
