@@ -14,7 +14,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../src'))
 
 
 # -- Project information -----------------------------------------------------
@@ -41,6 +41,7 @@ release = '0.0.15.4'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
+    'sphinxcontrib.bibtex'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

@@ -6,11 +6,18 @@
 Welcome to mdmpy's documentation!
 =================================
 
+Please note that this is a work in progress.
+
+To solve the Maximum Likelihood problem in Marginal Distribution Models, this package leverages on `Pyomo <http://www.pyomo.org/>`_ for interfacing with solvers and `NumPy <http://www.numpy.org/>`_ for calculations of a gradient based method.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-
+   installation.rst
+   overview.rst
+   examples.rst
+   modules.rst
 
 Indices and tables
 ==================

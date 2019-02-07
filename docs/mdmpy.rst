@@ -1,21 +1,21 @@
-src package
-===========
+mdmpy package
+=============
 
 Submodules
 ----------
 
-src.mdm module
---------------
+mdmpy.mdm module
+----------------
 
-.. automodule:: src.mdm
+.. automodule:: mdmpy.mdm
     :members:
     :undoc-members:
     :show-inheritance:
 
-src.util module
----------------
+mdmpy.util module
+-----------------
 
-.. automodule:: src.util
+.. automodule:: mdmpy.util
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +24,7 @@ src.util module
 Module contents
 ---------------
 
-.. automodule:: src
+.. automodule:: mdmpy
     :members:
     :undoc-members:
     :show-inheritance:

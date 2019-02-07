@@ -1,7 +1,7 @@
-src
-===
+mdmpy
+=====
 
 .. toctree::
    :maxdepth: 4
 
-   src
+   mdmpy
