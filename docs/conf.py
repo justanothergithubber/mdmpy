@@ -24,9 +24,9 @@ copyright = '2019, mdmpy Authors'
 author = 'mdmpy Authors'
 
 # The short X.Y version
-version = '0.0.15.4'
+version = '0.0.15.6'
 # The full version, including alpha/beta/rc tags
-release = '0.0.15.4'
+release = '0.0.15.6'
 
 
 # -- General configuration ---------------------------------------------------
@@ -43,6 +43,10 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinxcontrib.bibtex'
 ]
+
+# because readthedocs would break without this
+### Would probably need further changing (will wait for build and check exceptions)
+autodoc_mock_imports = ['numpy', 'scipy']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
