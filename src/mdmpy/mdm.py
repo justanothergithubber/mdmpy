@@ -191,7 +191,7 @@ class MDM:
             return model.lambda_[i]-sum(model.beta[l]*self._X[i][k][l] for l in model.L) >= conv_min
         self.m.convcon = aml.Constraint(self.m.I, self.m.K, rule=_con_cons)
 
-    def model_solve(self, solver, solver_exec_location, tee: bool = False, **kwargs):
+    def model_solve(self, solver, solver_exec_location=None, tee: bool = False, **kwargs):
         """Start a solver to solve the model"""
         self.solver = aml.SolverFactory(solver, executable=solver_exec_location)
         self.solver.options.update(kwargs)
