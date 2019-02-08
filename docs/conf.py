@@ -46,7 +46,7 @@ extensions = [
 
 # because readthedocs would break without this
 ### Would probably need further changing (will wait for build and check exceptions)
-autodoc_mock_imports = ['numpy', 'scipy']
+autodoc_mock_imports = ['numpy', 'scipy', 'pyomo']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

@@ -1,5 +1,5 @@
 Examples
-====================
+========
 
 Travel Mode Choice
 ------------------
@@ -32,7 +32,7 @@ We will use :mod:`requests` to get the dataset, and then process it with :mod:`c
 Solving for the MLE
 ^^^^^^^^^^^^^^^^^^^
 
-We can initialise the model using the :meth:`model_init` method.
+We can initialise the model using the :meth:`MDM.model_init` method.
 
 .. code-block:: python
 
@@ -76,7 +76,8 @@ Alternatively, we can use all of the data of the choices:
    print(ll1)
 
 Full Code
----------
+^^^^^^^^^
+
 .. code-block:: python
 
    import csv
@@ -90,8 +91,6 @@ Full Code
    df = pd.DataFrame(index=np.arange(0, 840), columns=np.arange(0,7))
    with requests.Session() as s:
        download = s.get(url)
-
-
        cr = csv.reader(download.content.decode().splitlines())
        next(cr)
        for ix, row in enumerate(cr):
