@@ -15,6 +15,15 @@ def exp_pdf(x, lambda_: float = 1):
     """Exponential Probability Density Function (PDF), with default parameter 1"""
     return lambda_*aml.exp(-lambda_*x)
 
+# in general, lambda = 1
+def gumbel_cdf(x, beta: float = 1):
+    """Gumbel Cumulative Distribution Function (CDF), with default parameter 1"""
+    return aml.exp(-aml.exp(-x/beta))
+
+def gumbel_pdf(x, beta: float = 1):
+    """Gumbel Probability Density Function (PDF), with default parameter 1"""
+    return 1/beta * aml.exp(-((x/beta)+aml.exp(-(x/beta))))
+
 # Default Bisection function
 # Would be a different function if individual-specific coefficients are used
 def default_bisect_func(input_cdf, input_beta, input_x, lambda_: float) -> float:

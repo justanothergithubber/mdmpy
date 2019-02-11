@@ -78,8 +78,10 @@ class MDM:
                     pass
         return loglik
 
-    def __loglikexpr(self, heteroscedastic=False, lag_f=lambda arg: aml.log(1-self._cdf(arg))):
+    def __loglikexpr(self, heteroscedastic=False, lag_f=None):
         ### TODO - refactor the double summation over I and K, which is repeated
+        if lag_f is None:
+            lag_f=lambda arg: aml.log(1-self._cdf(arg))
         if heteroscedastic:
             return sum(sum(
                         self._Z[i][k]*self.m.alpha[k]*lag_f(
@@ -155,6 +157,8 @@ class MDM:
             # Model CDF simplifications
             if self._cdf == util.exp_cdf:
                 O_expr = self.__loglikexpr(lag_f=lambda arg: -arg)
+            if self._cdf == util.gumbel_cdf:
+                O_expr = self.__loglikexpr(lag_f=lambda arg: aml.log(1-aml.exp(-aml.exp(-arg))))
             else:
                 O_expr = self.__loglikexpr()
 
@@ -167,6 +171,16 @@ class MDM:
             def _lag_cons(model, i):
                 return sum(aml.exp(model.alpha[k]*(sum(
                     model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i])) for k in model.K) <= 1
+        elif self._cdf == util.exp_cdf:
+            def _lag_cons(model, i):
+                return sum(aml.exp(sum(
+                    model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i]) for k in model.K) <= 1
+        elif self._cdf == util.gumbel_cdf:
+            def _lag_cons(model, i):
+                return sum(1-aml.exp(-aml.exp(
+                            (model.lambda_[i]-sum(
+                                model.beta[l]*self._X[i][k][l] for l in model.L))
+                                    )) for k in model.K) <= 1
         else:
             def _lag_cons(model, i):
                 return sum(1-self._cdf(model.lambda_[i]-sum(
@@ -219,7 +233,8 @@ class MDM:
                   initial_beta,
                   max_steps: int = 50,
                   grad_mult=1,
-                  eps: float = 10**-7):
+                  eps: float = 10**-7,
+                  verbosity=0):
         """Starts a gradient-descent based method using the CDF and PDF.
         Requires a starting beta iterate.
 
@@ -234,6 +249,8 @@ class MDM:
             beta_iterate = beta_iterate + grad_mult*(grad/(num_step+1))
             # once no more big gains are made, stop
             cur_ll = self.ll(beta_iterate, corr_lambs=corr_lambs)
+            if verbosity == 1:
+                print(cur_ll)
             if math.isnan(cur_ll):
                 print("An Error occurred in calculating Loglikelihood")
                 break # no point continuing when LL has is nan

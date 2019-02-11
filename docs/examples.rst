@@ -32,7 +32,7 @@ We will use :mod:`requests` to get the dataset, and then process it with :mod:`c
 Solving for the MLE
 ^^^^^^^^^^^^^^^^^^^
 
-We can initialise the model using the :meth:`MDM.model_init` method.
+We can initialise the model using the :meth:`model_init` method.
 
 .. code-block:: python
 
