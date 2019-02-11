@@ -81,7 +81,7 @@ class MDM:
     def __loglikexpr(self, heteroscedastic=False, lag_f=None):
         ### TODO - refactor the double summation over I and K, which is repeated
         if lag_f is None:
-            lag_f=lambda arg: aml.log(1-self._cdf(arg))
+            lag_f = lambda arg: aml.log(1-self._cdf(arg))
         if heteroscedastic:
             return sum(sum(
                         self._Z[i][k]*self.m.alpha[k]*lag_f(
@@ -157,8 +157,10 @@ class MDM:
             # Model CDF simplifications
             if self._cdf == util.exp_cdf:
                 O_expr = self.__loglikexpr(lag_f=lambda arg: -arg)
+            ### seems bugged ###
             if self._cdf == util.gumbel_cdf:
                 O_expr = self.__loglikexpr(lag_f=lambda arg: aml.log(1-aml.exp(-aml.exp(-arg))))
+            ### seems bugged ###
             else:
                 O_expr = self.__loglikexpr()
 
@@ -175,12 +177,13 @@ class MDM:
             def _lag_cons(model, i):
                 return sum(aml.exp(sum(
                     model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i]) for k in model.K) <= 1
+        ### seems bugged ###
         elif self._cdf == util.gumbel_cdf:
             def _lag_cons(model, i):
                 return sum(1-aml.exp(-aml.exp(
-                            (model.lambda_[i]-sum(
-                                model.beta[l]*self._X[i][k][l] for l in model.L))
-                                    )) for k in model.K) <= 1
+                        sum(model.beta[l]*self._X[i][k][l] for l in model.L)-
+                            (model.lambda_[i]))) for k in model.K) <= 1
+        ### seems bugged ###
         else:
             def _lag_cons(model, i):
                 return sum(1-self._cdf(model.lambda_[i]-sum(

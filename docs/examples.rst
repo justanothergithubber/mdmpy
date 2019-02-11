@@ -21,11 +21,11 @@ We will use :mod:`requests` to get the dataset, and then process it with :mod:`c
    url = "http://pages.stern.nyu.edu/~wgreene/Text/Edition7/TableF18-2.csv"
    # Preallocate 840 rows and 7 columns, which is the size of the data
    # We will skip the header row
-   df = pd.DataFrame(index=np.arange(0, 841), columns=np.arange(0,7))
+   df = pd.DataFrame(index=np.arange(0, 840), columns=np.arange(0,7))
    with requests.Session() as s:
        download = s.get(url)
        cr = csv.reader(download.content.decode().splitlines())
-       next(cr)
+       next(cr) # skip header
        for ix, row in enumerate(cr):
            df.loc[ix] = [int(x) for x in row]
 
@@ -92,7 +92,7 @@ Full Code
    with requests.Session() as s:
        download = s.get(url)
        cr = csv.reader(download.content.decode().splitlines())
-       next(cr)
+       next(cr) # skip header
        for ix, row in enumerate(cr):
            df.loc[ix] = [int(x) for x in row]
 
