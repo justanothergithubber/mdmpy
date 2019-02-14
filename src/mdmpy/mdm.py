@@ -213,23 +213,26 @@ class MDM:
 
         # Lagrangian Constraints (for each individual)
         def _lag_cons(model, i):
-            sum_expr = (1-self._cdf(model.lambda_[i]-sum(
-                            model.beta[l]*self._X[i][k][l] for l in model.L)))
             # MEM
             if heteroscedastic and use_ASCs and self._cdf == util.exp_cdf:
-                sum_expr = aml.exp(model.alpha[k]*(sum(
-                                model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i]))
+                lhs_sum_expr = sum(aml.exp(model.alpha[k]*(sum(
+                    model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i])) for k in model.K)
 
             ### TODO Figure out best way to write out the different cases
-            if heteroscedastic and self._cdf == util.exp_cdf:
-                sum_expr = aml.exp(model.alpha[k]*(sum(
-                                model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i]))
+            elif heteroscedastic and self._cdf == util.exp_cdf:
+                lhs_sum_expr = sum(aml.exp(model.alpha[k]*(sum(
+                    model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i])) for k in model.K)
             elif self._cdf == util.exp_cdf:
-                sum_expr = aml.exp(sum(model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i])
+                lhs_sum_expr = sum(aml.exp(sum(
+                    model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i]) for k in model.K)
             elif self._cdf == util.gumbel_cdf:
-                sum_expr = 1-aml.exp(-aml.exp(
-                                sum(model.beta[l]*self._X[i][k][l] for l in model.L)-(model.lambda_[i])))
-            return sum(sum_expr for k in model.K) <= 1
+                lhs_sum_expr = sum(1-aml.exp(-aml.exp(
+                    sum(model.beta[l]*self._X[i][k][l] for l in model.L)-(model.lambda_[i]))) for k in model.K)
+            # Default
+            else:
+                lhs_sum_expr = sum((1-self._cdf(model.lambda_[i]-sum(
+                    model.beta[l]*self._X[i][k][l] for l in model.L))) for k in model.K)
+            return lhs_sum_expr <= 1
         self.m.C = aml.Constraint(self.m.I, rule=_lag_cons)
 
         # Scale restriction - not required
