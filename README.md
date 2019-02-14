@@ -87,5 +87,6 @@ print([mdm.m.beta[idx].value for idx in mdm.m.beta])
 
 3.  Put `pandas` into `extras_require` of `setup.py`, and remove the dependency. 
     *   Input of `MDM` class will become a `NumPy` array rather than a dataframe.
+
     *   Dataframe conversion will be turned into a utility function,
     likely using try-except block for imports

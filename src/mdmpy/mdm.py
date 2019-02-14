@@ -158,6 +158,8 @@ class MDM:
             self.m.lambda_ = aml.Var(self.m.I)
             if use_ASCs:
                 self.m.ASC = aml.Var(self.m.K)
+                if ASC_fixed_to_zero:
+                    self.m.ASCConstr = aml.Constraint(self.m.ASC[ASC_fixed_to_zero] == 0)
 
         # Variable for handling heteroscedascity
         if heteroscedastic:
@@ -231,7 +233,7 @@ class MDM:
                             sum(model.beta[l]*self._X[i][k][l] for l in model.L)-(model.lambda_[i])))
         else:
             sum_expr = None
-        self.m.C = aml.Constraint(self.m.I, rule=_lag_cons_helper(sum_expr))
+        self.m.C = aml.Constraint(self.m.I, rule=_lag_cons_helper(lhs_sum_expr=sum_expr))
 
         # Scale restriction - not required
         # but might help solver not get lost and diverge
