@@ -15,7 +15,7 @@ def exp_pdf(x, lambda_: float = 1):
     """Exponential Probability Density Function (PDF), with default parameter 1"""
     return lambda_*aml.exp(-lambda_*x)
 
-# in general, lambda = 1
+# in general, beta = 1
 def gumbel_cdf(x, beta: float = 1):
     """Gumbel Cumulative Distribution Function (CDF), with default parameter 1"""
     return aml.exp(-aml.exp(-x/beta))

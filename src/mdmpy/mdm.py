@@ -78,26 +78,59 @@ class MDM:
                     pass
         return loglik
 
-    def __loglikexpr(self, heteroscedastic=False, lag_f=None):
+    def __loglikexpr(self, heteroscedastic=False, ASC=False, lag_f=None):
         ### TODO - refactor the double summation over I and K, which is repeated
         if lag_f is None:
             lag_f = lambda arg: aml.log(1-self._cdf(arg))
+        ### TODO Figure out best way to write out the different cases
         if heteroscedastic:
-            return sum(sum(
-                        self._Z[i][k]*self.m.alpha[k]*lag_f(
-                            self.m.lambda_[i]-sum(
-                                self.m.beta[l]*self._X[i][k][l] for l in self.m.L)
+            if ASC:
+                return sum(sum(
+                    self._Z[i][k]*self.m.alpha[k]*lag_f(
+                        self.m.lambda_[i]-sum(
+                            self.m.beta[l]*self._X[i][k][l] for l in self.m.L)
+                                -self.m.ASC[k]
                                     ) for k in self.m.K) for i in self.m.I)
+            else:
+                return sum(sum(
+                    self._Z[i][k]*self.m.alpha[k]*lag_f(
+                        self.m.lambda_[i]-sum(
+                            self.m.beta[l]*self._X[i][k][l] for l in self.m.L)
+                                ) for k in self.m.K) for i in self.m.I)
         else:
-            return sum(sum(
-                        self._Z[i][k]*lag_f(
-                            self.m.lambda_[i]-sum(
-                                self.m.beta[l]*self._X[i][k][l] for l in self.m.L)
+            if ASC:
+                return sum(sum(
+                    self._Z[i][k]*lag_f(
+                        self.m.lambda_[i]-sum(
+                            self.m.beta[l]*self._X[i][k][l] for l in self.m.L)
+                                -self.m.ASC[k]
                                     ) for k in self.m.K) for i in self.m.I)
+            else:
+                return sum(sum(
+                    self._Z[i][k]*lag_f(
+                        self.m.lambda_[i]-sum(
+                            self.m.beta[l]*self._X[i][k][l] for l in self.m.L)
+                                ) for k in self.m.K) for i in self.m.I)
 
-    def model_init(self, heteroscedastic=False, model_seed=None):
-        """"This method initializes the pyomo model as an instance
-        attribute m. Values can later be taken directly from m."""
+    def model_init(self,
+                   heteroscedastic=False,
+                   alpha_to_be_fixed=0,
+                   alpha_cons_limits=(0, 1),
+                   use_ASCs=False,
+                   ASC_fixed_to_zero=None,
+                   model_seed=None,
+                   v=0):
+        """
+        This method initializes the pyomo model as an instance
+        attribute m. Values can later be taken directly from m.
+
+        The various keyword arguments of this method are used to customise
+        the resulting model. They include alternative-specific constants
+        (ASCs) which act as y-intercepts depending on which choice was made.
+
+        Another keyword argument is involved in deciding whether the model
+        will handle heteroscedasticity.
+        """
         self.m = aml.ConcreteModel()
         # Model Sets
         self.m.K = aml.Set(initialize=range(self._num_choices))
@@ -110,31 +143,38 @@ class MDM:
         # For checking if convexity gives numerical stability
         if model_seed:
             np.random.seed(model_seed)
-            numpy_stan_exp = np.random.standard_exponential
-            self.m.beta = aml.Var(self.m.L, initialize=lambda _: numpy_stan_exp()) # 1 arg required for initialize
-            self.m.lambda_ = aml.Var(self.m.I, initialize=lambda _: numpy_stan_exp())
-            ### TODO - Delete OR add verbosity flag to determine if these should be printed
-            print([self.m.beta[h].value for h in self.m.L])
-            print([self.m.lambda_[g].value for g in self.m.I])
+            np_stan_exp = np.random.standard_exponential
+            self.m.beta = aml.Var(self.m.L, initialize=lambda _: np_stan_exp()) # 1 arg required for initialize
+            self.m.lambda_ = aml.Var(self.m.I, initialize=lambda _: np_stan_exp())
+            if use_ASCs:
+                self.m.ASC = aml.Var(self.m.K, initialize=lambda _: np_stan_exp())
+            if v >= 1:
+                print([self.m.beta[q].value for q in self.m.L])
+                print([self.m.lambda_[q].value for q in self.m.I])
+                if use_ASCs:
+                    print([self.m.ASC[q].value for q in self.m.K])
         else:
             self.m.beta = aml.Var(self.m.L)
             self.m.lambda_ = aml.Var(self.m.I)
+            if use_ASCs:
+                self.m.ASC = aml.Var(self.m.K)
 
-        # Handling heteroscedascity
+        # Variable for handling heteroscedascity
         if heteroscedastic:
             # known heteroscedasticity
             if isinstance(heteroscedastic, list):
                 self.m.alpha = {idx:v for idx, v in enumerate(heteroscedastic)}
             # else, unknown heteroscedasticity
             else:
-                self.m.alpha = aml.Var(self.m.K, domain=aml.PositiveReals)
+                self.m.alpha = aml.Var(self.m.K, domain=aml.NonNegativeReals)
 #                 self.m.AlphaSumCons = aml.Constraint(expr=sum(self.m.alpha[k] for k in self.m.K)==num_choices)
-                self.m.FixOneAlphaC = aml.Constraint(expr=self.m.alpha[0] == 1)
+                self.m.FixOneAlphaC = aml.Constraint(expr=self.m.alpha[alpha_to_be_fixed] == 1)
 
-                def _tol_cons(model, k, ALPHA_TOL=0.3):
-                    return model.alpha[k] >= ALPHA_TOL
+                def _alpha_cons(model, k):
+                    # alpha_cons_limits is a keyword argument to model_init
+                    return (alpha_cons_limits[0], model.alpha[k], alpha_cons_limits[1])
 
-                self.m.AlphaTol = aml.Constraint(self.m.K, rule=_tol_cons)
+                self.m.AlphaTol = aml.Constraint(self.m.K, rule=_alpha_cons)
 
         # Objective Function
         ### TODO Hardcode in the other common distributions, especially
@@ -150,6 +190,8 @@ class MDM:
         if heteroscedastic:
             if self._cdf == util.exp_cdf:
                 O_expr = self.__loglikexpr(heteroscedastic=True, lag_f=lambda arg: -arg)
+            elif self._cdf == util.exp_cdf and use_ASCs:
+                O_expr = self.__loglikexpr(heteroscedastic=True, ASC=True, lag_f=lambda arg: -arg)
             else:
                 O_expr = self.__loglikexpr(heteroscedastic=True)
 
@@ -157,10 +199,10 @@ class MDM:
             # Model CDF simplifications
             if self._cdf == util.exp_cdf:
                 O_expr = self.__loglikexpr(lag_f=lambda arg: -arg)
-            ### seems bugged ###
-            if self._cdf == util.gumbel_cdf:
+            elif self._cdf == util.gumbel_cdf:
                 O_expr = self.__loglikexpr(lag_f=lambda arg: aml.log(1-aml.exp(-aml.exp(-arg))))
-            ### seems bugged ###
+            elif use_ASCs:
+                O_expr = self.__loglikexpr(ASC=True)
             else:
                 O_expr = self.__loglikexpr()
 
@@ -168,27 +210,28 @@ class MDM:
         self.m.O = aml.Objective(expr=O_expr, sense=aml.maximize)
 
         # Lagrangian Constraints (for each individual)
+        def _lag_cons_helper(model, i, lhs_sum_expr=None):
+            if lhs_sum_expr is None:
+                lhs_sum_expr = (1-self._cdf(model.lambda_[i]-sum(
+                                    model.beta[l]*self._X[i][k][l] for l in model.L)))
+            return sum(lhs_sum_expr for k in model.K) <= 1
         # MEM
+        if heteroscedastic and use_ASCs and self._cdf == util.exp_cdf:
+            sum_expr = aml.exp(model.alpha[k]*(sum(
+                            model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i]))
+
+        ### TODO Figure out best way to write out the different cases
         if heteroscedastic and self._cdf == util.exp_cdf:
-            def _lag_cons(model, i):
-                return sum(aml.exp(model.alpha[k]*(sum(
-                    model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i])) for k in model.K) <= 1
+            sum_expr = aml.exp(model.alpha[k]*(sum(
+                            model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i]))
         elif self._cdf == util.exp_cdf:
-            def _lag_cons(model, i):
-                return sum(aml.exp(sum(
-                    model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i]) for k in model.K) <= 1
-        ### seems bugged ###
+            sum_expr = aml.exp(sum(model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i])
         elif self._cdf == util.gumbel_cdf:
-            def _lag_cons(model, i):
-                return sum(1-aml.exp(-aml.exp(
-                        sum(model.beta[l]*self._X[i][k][l] for l in model.L)-
-                            (model.lambda_[i]))) for k in model.K) <= 1
-        ### seems bugged ###
+            sum_expr = 1-aml.exp(-aml.exp(
+                            sum(model.beta[l]*self._X[i][k][l] for l in model.L)-(model.lambda_[i])))
         else:
-            def _lag_cons(model, i):
-                return sum(1-self._cdf(model.lambda_[i]-sum(
-                    model.beta[l]*self._X[i][k][l] for l in model.L)) for k in model.K) <= 1
-        self.m.C = aml.Constraint(self.m.I, rule=_lag_cons)
+            sum_expr = None
+        self.m.C = aml.Constraint(self.m.I, rule=_lag_cons_helper(sum_expr))
 
         # Scale restriction - not required
         # but might help solver not get lost and diverge
@@ -238,25 +281,32 @@ class MDM:
                   grad_mult=1,
                   eps: float = 10**-7,
                   verbosity=0):
-        """Starts a gradient-descent based method using the CDF and PDF.
+        """
+        Starts a gradient-descent based method using the CDF and PDF.
         Requires a starting beta iterate.
 
-        TODO : to add f_arg_min which will be pass onto the gradient
+        TODO: to add f_arg_min which will be pass onto the gradient
         calculators and use grad_lambda_beta to move towards
         a convex region, which is above f_arg_min
+
+        TODO: Add some sort of linesearch method. That is, a method
+        that uses a direction and tries varies stepsizes to check
+        what happens to the loglikelihood with those stepsizes
+        and uses some rules or heuristics to decide which
+        stepsize to choose
         """
         last_log_lik = self.ll(initial_beta)
         beta_iterate = initial_beta #initialize
         for num_step in range(max_steps):
             grad, corr_lambs = self._calc_grad_ll_beta(beta_iterate)
             beta_iterate = beta_iterate + grad_mult*(grad/(num_step+1))
-            # once no more big gains are made, stop
             cur_ll = self.ll(beta_iterate, corr_lambs=corr_lambs)
             if verbosity == 1:
                 print(cur_ll)
             if math.isnan(cur_ll):
                 print("An Error occurred in calculating Loglikelihood")
                 break # no point continuing when LL has is nan
+            # once no more big gains are made, stop
             if abs(last_log_lik-cur_ll) < eps:
                 break
             last_log_lik = cur_ll

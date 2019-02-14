@@ -3,11 +3,14 @@
 [![Documentation Status](https://readthedocs.org/projects/mdmpy/badge/?version=latest)](https://mdmpy.readthedocs.io/en/latest/?badge=latest)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/c13f603535364a7ba5a6a18ea6756a64)](https://app.codacy.com/app/justanothergithubber/mdmpy?utm_source=github.com&utm_medium=referral&utm_content=justanothergithubber/mdmpy&utm_campaign=Badge_Grade_Dashboard)
 [![PyPI version](https://badge.fury.io/py/mdmpy.svg)](https://badge.fury.io/py/mdmpy)
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 
 This package is a `Python` implementation of [Marginal Distribution Models](https://pubsonline.informs.org/doi/10.1287/mnsc.2014.1906) (MDMs), which can be used in Discrete Choice Modelling.
 
-## Install
+## Documentation
+Documentation is kindly hosted by [Read The Docs](https://mdmpy.readthedocs.io/ "mdmpy Documentation").
 
+## Install
 This package is uploaded to [PyPI](https://pypi.org/ "Python Package Index"). Hence, 
 
 ```bat
@@ -81,3 +84,8 @@ print([mdm.m.beta[idx].value for idx in mdm.m.beta])
     *   Add more type hints, especially those involving Python builtins
 
 2.  Add tests.
+
+3.  Put `pandas` into `extras_require` of `setup.py`, and remove the dependency. 
+    *   Input of `MDM` class will become a `NumPy` array rather than a dataframe.
+    *   Dataframe conversion will be turned into a utility function,
+    likely using try-except block for imports

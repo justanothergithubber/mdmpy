@@ -59,21 +59,25 @@ We can also get the loglikelihood of such an outcome.
    ll0 = mdm0.ll(beta0)
    print(ll0)
 
-Alternatively, we can use all of the data of the choices:
+Alternatively, we can use all of the data of the choices.
+Since we are not changing much, we can define it as a function.
 
 .. code-block:: python
 
-   mdm1 = mdmpy.MDM(df,   # input dataframe
-                    0,    # the choice is index 0
-                    4,    # there are 4 possible choices
-                    [1, 2, 3, 4] # now instead we use all 4 choice-specific-data columns
-                    )
-   mdm1.model_init()
-   mdm1.model_solve("ipopt")
-   beta1 = [mdm1.m.beta[idx].value for idx in mdm1.m.beta]
-   print(beta1)
-   ll1 = mdm1.ll(beta1)
-   print(ll1)
+   def print_beta_vals(attr_col_indices):
+       mdm = mdmpy.MDM(df,   # input dataframe
+                       0,    # the choice is index 0
+                       4,    # there are 4 possible choices
+                       attr_col_indices # now instead we use all 4 choice-specific-data columns
+                       )
+       mdm.model_init()
+       mdm.model_solve("ipopt")
+       beta = [mdm.m.beta[idx].value for idx in mdm.m.beta]
+       print(beta)
+       ll = mdm.ll(beta)
+       print(ll)
+
+   print_beta_vals([1, 2, 3, 4])
 
 Full Code
 ^^^^^^^^^
@@ -96,29 +100,22 @@ Full Code
        for ix, row in enumerate(cr):
            df.loc[ix] = [int(x) for x in row]
 
-   mdm0 = mdmpy.MDM(df,   # input dataframe
-                    0,    # the choice is index 0
-                    4,    # there are 4 possible choices
-                    [2,3] # we will use columns index 2 and 3 (3rd and 4th column, Python indices start from 0)
-                    )
-   mdm0.model_init()
-   mdm0.model_solve("ipopt")
-   beta0 = [mdm0.m.beta[idx].value for idx in mdm0.m.beta]
-   print(beta0)
-   ll0 = mdm0.ll(beta0)
-   print(ll0)
+   def print_beta_vals(attr_col_indices):
+       mdm = mdmpy.MDM(df,   # input dataframe
+                       0,    # the choice is index 0
+                       4,    # there are 4 possible choices
+                       attr_col_indices # now instead we use all 4 choice-specific-data columns
+                       )
+       mdm.model_init()
+       mdm.model_solve("ipopt")
+       beta = [mdm.m.beta[idx].value for idx in mdm.m.beta]
+       print(beta)
+       ll = mdm.ll(beta)
+       print(ll)
 
-   mdm1 = mdmpy.MDM(df,   # input dataframe
-                    0,    # the choice is index 0
-                    4,    # there are 4 possible choices
-                    [1, 2, 3, 4] # now instead we use all 4 choice-specific-data columns
-                    )
-   mdm1.model_init()
-   mdm1.model_solve("ipopt")
-   beta1 = [mdm1.m.beta[idx].value for idx in mdm1.m.beta]
-   print(beta1)
-   ll1 = mdm1.ll(beta1)
-   print(ll1)
+   print_beta_vals([2, 3])
+
+   print_beta_vals([1, 2, 3, 4])
 
 .. bibliography:: references.bib
    :filter: docname in docnames
