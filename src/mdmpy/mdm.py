@@ -230,7 +230,7 @@ class MDM:
                 sum_expr = 1-aml.exp(-aml.exp(
                                 sum(model.beta[l]*self._X[i][k][l] for l in model.L)-(model.lambda_[i])))
             return sum(sum_expr for k in model.K) <= 1
-        self.m.C = aml.Constraint(self.m.I, rule=_lag_cons())
+        self.m.C = aml.Constraint(self.m.I, rule=_lag_cons)
 
         # Scale restriction - not required
         # but might help solver not get lost and diverge
