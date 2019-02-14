@@ -212,28 +212,25 @@ class MDM:
         self.m.O = aml.Objective(expr=O_expr, sense=aml.maximize)
 
         # Lagrangian Constraints (for each individual)
-        def _lag_cons_helper(model, i, lhs_sum_expr=None):
-            if lhs_sum_expr is None:
-                lhs_sum_expr = (1-self._cdf(model.lambda_[i]-sum(
-                                    model.beta[l]*self._X[i][k][l] for l in model.L)))
-            return sum(lhs_sum_expr for k in model.K) <= 1
-        # MEM
-        if heteroscedastic and use_ASCs and self._cdf == util.exp_cdf:
-            sum_expr = aml.exp(model.alpha[k]*(sum(
-                            model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i]))
+        def _lag_cons(model, i):
+            sum_expr = (1-self._cdf(model.lambda_[i]-sum(
+                            model.beta[l]*self._X[i][k][l] for l in model.L)))
+            # MEM
+            if heteroscedastic and use_ASCs and self._cdf == util.exp_cdf:
+                sum_expr = aml.exp(model.alpha[k]*(sum(
+                                model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i]))
 
-        ### TODO Figure out best way to write out the different cases
-        if heteroscedastic and self._cdf == util.exp_cdf:
-            sum_expr = aml.exp(model.alpha[k]*(sum(
-                            model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i]))
-        elif self._cdf == util.exp_cdf:
-            sum_expr = aml.exp(sum(model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i])
-        elif self._cdf == util.gumbel_cdf:
-            sum_expr = 1-aml.exp(-aml.exp(
-                            sum(model.beta[l]*self._X[i][k][l] for l in model.L)-(model.lambda_[i])))
-        else:
-            sum_expr = None
-        self.m.C = aml.Constraint(self.m.I, rule=_lag_cons_helper(lhs_sum_expr=sum_expr))
+            ### TODO Figure out best way to write out the different cases
+            if heteroscedastic and self._cdf == util.exp_cdf:
+                sum_expr = aml.exp(model.alpha[k]*(sum(
+                                model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i]))
+            elif self._cdf == util.exp_cdf:
+                sum_expr = aml.exp(sum(model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i])
+            elif self._cdf == util.gumbel_cdf:
+                sum_expr = 1-aml.exp(-aml.exp(
+                                sum(model.beta[l]*self._X[i][k][l] for l in model.L)-(model.lambda_[i])))
+            return sum(sum_expr for k in model.K) <= 1
+        self.m.C = aml.Constraint(self.m.I, rule=_lag_cons())
 
         # Scale restriction - not required
         # but might help solver not get lost and diverge
