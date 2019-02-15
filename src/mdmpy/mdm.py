@@ -159,7 +159,7 @@ class MDM:
             if use_ASCs:
                 self.m.ASC = aml.Var(self.m.K)
                 if ASC_fixed_to_zero:
-                    self.m.ASCConstr = aml.Constraint(self.m.ASC[ASC_fixed_to_zero] == 0)
+                    self.m.ASCConstr = aml.Constraint(expr=self.m.ASC[ASC_fixed_to_zero] == 0)
 
         # Variable for handling heteroscedascity
         if heteroscedastic:
