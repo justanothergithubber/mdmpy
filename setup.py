@@ -9,7 +9,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mdmpy",
-    version="0.0.15.14",
+    version="0.0.15.15",
     author="mdmpy Authors",
     author_email="mdmpyatgithub@gmail.com",
     description="A package that implements Marginal Distribution Models (MDMs)",
