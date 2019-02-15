@@ -216,8 +216,8 @@ class MDM:
             # MEM
             if heteroscedastic and use_ASCs and self._cdf == util.exp_cdf:
                 lhs_sum_expr = sum(aml.exp(model.alpha[k]*(sum(
-                    model.ASC[k]+
-                        model.beta[l]*self._X[i][k][l] for l in model.L)-model.lambda_[i])) for k in model.K)
+                    model.beta[l]*self._X[i][k][l] for l in model.L)+
+                        model.ASC[k]-model.lambda_[i])) for k in model.K)
 
             ### TODO Figure out best way to write out the different cases
             elif heteroscedastic and self._cdf == util.exp_cdf:
