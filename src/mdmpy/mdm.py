@@ -190,10 +190,10 @@ class MDM:
         ###### ... distributions with suitable unbounded regions
         ###### ... satisfying tail convex+tail logconcave
         if heteroscedastic:
-            if self._cdf == util.exp_cdf:
-                O_expr = self.__loglikexpr(heteroscedastic=True, lag_f=lambda arg: -arg)
-            elif self._cdf == util.exp_cdf and use_ASCs:
+            if self._cdf == util.exp_cdf and use_ASCs:
                 O_expr = self.__loglikexpr(heteroscedastic=True, ASC=True, lag_f=lambda arg: -arg)
+            elif self._cdf == util.exp_cdf:
+                O_expr = self.__loglikexpr(heteroscedastic=True, lag_f=lambda arg: -arg)
             else:
                 O_expr = self.__loglikexpr(heteroscedastic=True)
 
