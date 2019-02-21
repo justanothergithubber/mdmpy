@@ -229,6 +229,10 @@ class MDM:
             elif self._cdf == util.gumbel_cdf:
                 lhs_sum_expr = sum(1-aml.exp(-aml.exp(
                     sum(model.beta[l]*self._X[i][k][l] for l in model.L)-(model.lambda_[i]))) for k in model.K)
+            elif use_ASCs:
+                lhs_sum_expr = sum((1-self._cdf(model.lambda_[i]-sum(
+                    model.beta[l]*self._X[i][k][l] for l in model.L)-
+                        model.ASC[k])) for k in model.K)
             # Default
             else:
                 lhs_sum_expr = sum((1-self._cdf(model.lambda_[i]-sum(
