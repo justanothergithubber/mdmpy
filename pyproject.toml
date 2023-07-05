@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "mdmpy"
+version = "0.0.15.18"
+description = ""
+authors = ["justanothergithubber <3600019+justanothergithubber@users.noreply.github.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+Pyomo = "^6.6.1"
+scipy = "^1.11.1"
+pandas = "^2.0.3"
+numpy = "^1.25.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

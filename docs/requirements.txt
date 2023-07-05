@@ -1,0 +1,4 @@
+sphinx-rtd-theme<1
+sphinx_rtd_dark_mode==1.2.4
+sphinxcontrib-bibtex==2.5.0
+mdmpy
